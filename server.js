@@ -24,7 +24,16 @@ const io = new Server(server, {
   }
 });
 
-// Reszta Twojego kodu bez zmian...
+app.get('/api/test/users', async (req, res) => {
+  try {
+    const users = await usersCollection.find({}).toArray();
+    console.log("📋 Aktualna lista userów na serwerze:", users);
+    res.json(users);
+  } catch (error) {
+    console.error("❌ Błąd pobierania userów:", error);
+    res.status(500).send("Internal server error");
+  }
+});
 
 
 // --- MongoDB Client setup ---
