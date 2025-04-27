@@ -104,6 +104,17 @@ app.post('/api/profile/save', async (req, res) => {
   res.sendStatus(200);
 });
 
+app.get('/api/profile/:nick', async (req, res) => {
+  const nick = req.params.nick;
+  if (!nick) return res.status(400).send('Missing nick');
+
+  const user = await usersCollection.findOne({ nick });
+  if (!user) return res.status(404).send('User not found');
+
+  const { password, _id, ...safeUser } = user; // Usuń hasło i ID
+  res.json({ user: safeUser });
+});
+
 // --- API usuwania konta ---
 app.post('/api/users/delete', async (req, res) => {
   const { nick, password } = req.body;
