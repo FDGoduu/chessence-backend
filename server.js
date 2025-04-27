@@ -463,6 +463,17 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
       }
     }
   });
+  socket.on("leaveRoom", ({ roomCode }) => {
+  const room = rooms[roomCode];
+  if (room) {
+    const otherSocketId = room.find(id => id !== socket.id);
+    if (otherSocketId) {
+      io.to(otherSocketId).emit("opponentLeft");
+    }
+    delete rooms[roomCode];
+    console.log(`🚪 Gracz opuścił pokój ${roomCode}`);
+  }
+});
 });
 
 function generateRoomCode() {
