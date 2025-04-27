@@ -149,6 +149,7 @@ app.post('/api/users/delete', async (req, res) => {
 });
 
 // --- API wysyłania zaproszenia do znajomych ---
+// --- Wysłanie zaproszenia ---
 app.post('/api/friends/request', async (req, res) => {
   const { sender, receiver } = req.body;
   if (!sender || !receiver) return res.status(400).send('Missing sender or receiver');
@@ -158,7 +159,7 @@ app.post('/api/friends/request', async (req, res) => {
 
   if (!receiverUser || !senderUser) return res.status(404).send('Sender or Receiver not found');
 
-  // 🔥 Sprawdź, czy zaproszenie już istnieje (w obie strony)
+  // Sprawdź, czy już jest wysłane zaproszenie
   if (receiverUser.pendingFriends?.includes(sender) || senderUser.pendingInvites?.includes(receiver)) {
     return res.status(400).send('Invitation already sent');
   }
@@ -178,6 +179,7 @@ app.post('/api/friends/request', async (req, res) => {
   res.sendStatus(200);
 });
 
+// --- Akceptacja zaproszenia ---
 app.post('/api/friends/accept', async (req, res) => {
   const { sender, receiver } = req.body;
   if (!sender || !receiver) return res.status(400).send('Missing sender or receiver');
@@ -201,7 +203,7 @@ app.post('/api/friends/accept', async (req, res) => {
   res.sendStatus(200);
 });
 
-// --- API odrzucenia zaproszenia ---
+// --- Odrzucenie zaproszenia ---
 app.post('/api/friends/decline', async (req, res) => {
   const { sender, receiver } = req.body;
   if (!sender || !receiver) return res.status(400).send('Missing sender or receiver');
