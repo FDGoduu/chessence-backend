@@ -1,49 +1,31 @@
-// --- Podstawowe wymagane moduły ---
 const express = require("express");
 const http = require("http");
 const { MongoClient, ObjectId } = require("mongodb");
 const cors = require("cors");
 const { Server } = require("socket.io");
-require("dotenv").config(); // aby odczytać MONGO_URI z .env
+require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
 
-// --- Dynamiczna obsługa CORS ---
-const allowedOrigins = [
-  "https://fdgoduu.github.io",
-  "http://127.0.0.1:8080",
-  "https://chessence-frontend.onrender.com"
-];
-
-const corsOptionsDelegate = function (req, callback) {
-  let corsOptions;
-  if (allowedOrigins.indexOf(req.header('Origin')) !== -1) {
-    corsOptions = { origin: true, credentials: true };
-  } else {
-    corsOptions = { origin: false };
-  }
-  callback(null, corsOptions);
-};
-
-app.use(cors(corsOptionsDelegate));
+// --- Ustawienie CORS NA SZTYWNO ---
+app.use(cors({
+  origin: "https://chessence-frontend.onrender.com",
+  credentials: true
+}));
 
 app.use(express.json());
 
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: "https://chessence-frontend.onrender.com",
     methods: ["GET", "POST"],
-    credentials: true,
-    allowedHeaders: ["Content-Type"]
+    credentials: true
   }
 });
+
+// Reszta Twojego kodu bez zmian...
+
 
 // --- MongoDB Client setup ---
 const client = new MongoClient(process.env.MONGO_URI);
