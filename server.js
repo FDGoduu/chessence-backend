@@ -27,7 +27,6 @@ const corsOptionsDelegate = function (req, callback) {
 };
 
 app.use(cors(corsOptionsDelegate));
-app.options('*', cors(corsOptionsDelegate));
 
 app.use(express.json());
 
