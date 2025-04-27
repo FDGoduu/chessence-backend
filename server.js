@@ -171,21 +171,21 @@ app.post('/api/friends/accept', async (req, res) => {
   const { sender, receiver } = req.body;
   if (!sender || !receiver) return res.status(400).send('Missing sender or receiver');
 
-  // Usuń zaproszenie od sendera u receivera
+  // Usuń zaproszenie od sendera w pendingFriends receivera
   await usersCollection.updateOne(
     { nick: receiver },
     {
       $pull: { pendingFriends: sender },
-      $addToSet: { friends: sender },
+      $addToSet: { friends: sender }
     }
   );
 
-  // Usuń wysłane zaproszenie do receivera u sendera
+  // Usuń pendingInvite receivera z sendera
   await usersCollection.updateOne(
     { nick: sender },
     {
       $pull: { pendingInvites: receiver },
-      $addToSet: { friends: receiver },
+      $addToSet: { friends: receiver }
     }
   );
 
@@ -197,13 +197,21 @@ app.post('/api/friends/decline', async (req, res) => {
   const { sender, receiver } = req.body;
   if (!sender || !receiver) return res.status(400).send('Missing sender or receiver');
 
+  // Usuń zaproszenie od sendera w pendingFriends receivera
   await usersCollection.updateOne(
     { nick: receiver },
     { $pull: { pendingFriends: sender } }
   );
 
+  // Usuń pendingInvite receivera z sendera
+  await usersCollection.updateOne(
+    { nick: sender },
+    { $pull: { pendingInvites: receiver } }
+  );
+
   res.sendStatus(200);
 });
+
 
 // --- API usunięcia znajomego ---
 app.post('/api/friends/remove', async (req, res) => {
