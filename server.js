@@ -250,7 +250,7 @@ let players = {};
 
 io.on("connection", (socket) => {
   
-  socket.on('sendFriendRequest', async ({ from, to }) => {
+ socket.on('sendFriendRequest', async ({ from, to }) => {
   try {
     const senderUser = await usersCollection.findOne({ nick: from });
     const receiverUser = await usersCollection.findOne({ nick: to });
@@ -260,6 +260,42 @@ io.on("connection", (socket) => {
       return;
     }
 
+    // 🔥 SPRAWDZENIE: Czy odbiorca już wysłał zaproszenie do nadawcy?
+    if (senderUser.pendingFriends?.includes(to)) {
+      console.log(`🤝 Wzajemne zaproszenie wykryte: ${from} i ${to}`);
+
+      // --- USTAW ZNAJOMYCH ---
+      await usersCollection.updateOne(
+        { nick: from },
+        {
+          $pull: { pendingFriends: to },
+          $addToSet: { friends: to }
+        }
+      );
+
+      await usersCollection.updateOne(
+        { nick: to },
+        {
+          $pull: { pendingInvites: from },
+          $addToSet: { friends: from }
+        }
+      );
+
+      // 🔥 Jeśli chcesz: możesz też wysłać do obu stron event refreshFriends
+      const receiverSocketId = Object.entries(players).find(([_, data]) => data.nick === to)?.[0];
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit('refreshFriends');
+      }
+
+      const senderSocketId = Object.entries(players).find(([_, data]) => data.nick === from)?.[0];
+      if (senderSocketId) {
+        io.to(senderSocketId).emit('refreshFriends');
+      }
+
+      return; // 🔥 PRZERWIJ – NIE WYSYŁAJ zwykłego zaproszenia
+    }
+
+    // --- Jeśli nie było wzajemnego zaproszenia, idziemy normalnie ---
     if (receiverUser.pendingFriends?.includes(from) || senderUser.pendingInvites?.includes(to)) {
       console.log('Invitation already sent.');
       return;
@@ -281,10 +317,12 @@ io.on("connection", (socket) => {
     if (receiverSocketId) {
       io.to(receiverSocketId).emit('refreshFriends');
     }
+
   } catch (error) {
     console.error('❌ Błąd przy socketowym wysyłaniu zaproszenia:', error);
   }
 });
+
 
   socket.on('registerPlayer', ({ nick, id }) => {
     console.log(`🔵 Zarejestrowano gracza: ${nick} (socket.id = ${socket.id})`);
