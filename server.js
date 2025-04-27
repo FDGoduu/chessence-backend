@@ -331,12 +331,18 @@ io.on("connection", (socket) => {
 
   console.log("🔌 Gracz połączony:", socket.id);
 
-  socket.on('friendListUpdated', ({ friend }) => {
-    const friendSocket = Object.entries(players).find(([_, data]) => data.nick === friend)?.[0];
-    if (friendSocket) {
-      io.to(friendSocket).emit('refreshFriends');
-    }
-  });
+socket.on('friendListUpdated', ({ friend }) => {
+  const targetSocketId = Object.entries(players).find(([_, data]) => data.nick === friend)?.[0];
+  if (targetSocketId) {
+    io.to(targetSocketId).emit('refreshFriends');
+  }
+
+  const mySocketId = Object.entries(players).find(([_, data]) => data.nick === players[socket.id]?.nick)?.[0];
+  if (mySocketId) {
+    io.to(mySocketId).emit('refreshFriends');
+  }
+});
+
 
   socket.on("createRoom", ({ nickname }) => {
     const roomCode = generateRoomCode();
