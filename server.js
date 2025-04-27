@@ -156,7 +156,6 @@ app.post('/api/friends/request', async (req, res) => {
   const receiverUser = await usersCollection.findOne({ nick: receiver });
   if (!receiverUser) return res.status(404).send('Receiver not found');
 
-  // Sprawdź, czy już jest oczekujące zaproszenie
   if (receiverUser.pendingFriends?.includes(sender)) {
     return res.status(400).send('Invitation already sent');
   }
@@ -180,7 +179,6 @@ app.post('/api/friends/accept', async (req, res) => {
   const { sender, receiver } = req.body;
   if (!sender || !receiver) return res.status(400).send('Missing sender or receiver');
 
-  // Usuń zaproszenie od sendera w pendingFriends receivera
   await usersCollection.updateOne(
     { nick: receiver },
     {
@@ -189,7 +187,6 @@ app.post('/api/friends/accept', async (req, res) => {
     }
   );
 
-  // Usuń pendingInvite receivera z sendera
   await usersCollection.updateOne(
     { nick: sender },
     {
@@ -206,13 +203,11 @@ app.post('/api/friends/decline', async (req, res) => {
   const { sender, receiver } = req.body;
   if (!sender || !receiver) return res.status(400).send('Missing sender or receiver');
 
-  // Usuń zaproszenie od sendera w pendingFriends receivera
   await usersCollection.updateOne(
     { nick: receiver },
     { $pull: { pendingFriends: sender } }
   );
 
-  // Usuń pendingInvite receivera z sendera
   await usersCollection.updateOne(
     { nick: sender },
     { $pull: { pendingInvites: receiver } }
