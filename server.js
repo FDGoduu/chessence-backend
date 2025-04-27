@@ -276,11 +276,11 @@ socket.on('acceptGameInvite', ({ roomCode, nickname }) => {
 
   io.to(roomCode).emit("startGame", {
     colorMap: assignColors(room),
+    roomCode: roomCode, // 🆕 Dodane!
   });
 
   console.log(`✅ Gracz ${nickname} zaakceptował zaproszenie i dołączył do pokoju ${roomCode}`);
 });
-
   
  socket.on('sendFriendRequest', async ({ from, to }) => {
   try {
@@ -384,19 +384,22 @@ socket.on('friendListUpdated', ({ friend }) => {
     console.log(`🆕 Pokój ${roomCode} utworzony przez ${nickname}`);
   });
 
-  socket.on("joinRoom", ({ roomCode, nickname }) => {
-    const room = rooms[roomCode];
-    if (!room || room.length >= 2) {
-      socket.emit("roomError", { message: "Pokój pełny lub nie istnieje" });
-      return;
-    }
-    room.push(socket.id);
-    socket.join(roomCode);
-    io.to(roomCode).emit("startGame", {
-      colorMap: assignColors(room),
-    });
-    console.log(`✅ Gracz ${nickname} dołączył do pokoju ${roomCode}`);
+socket.on("joinRoom", ({ roomCode, nickname }) => {
+  const room = rooms[roomCode];
+  if (!room || room.length >= 2) {
+    socket.emit("roomError", { message: "Pokój pełny lub nie istnieje");
+    return;
+  }
+  room.push(socket.id);
+  socket.join(roomCode);
+
+  io.to(roomCode).emit("startGame", {
+    colorMap: assignColors(room),
+    roomCode: roomCode, // 🆕 Dodane!
   });
+
+  console.log(`✅ Gracz ${nickname} dołączył do pokoju ${roomCode}`);
+});
 
   socket.on("matchmake", ({ nickname }) => {
     let found = false;
@@ -405,8 +408,9 @@ socket.on('friendListUpdated', ({ friend }) => {
         sockets.push(socket.id);
         socket.join(code);
         io.to(code).emit("startGame", {
-          colorMap: assignColors(sockets),
-        });
+        colorMap: assignColors(sockets),
+        roomCode: code, // 🆕 Dodane!
+      });
         console.log(`🤝 Automatyczne parowanie: ${sockets[0]} vs ${sockets[1]}`);
         found = true;
         break;
