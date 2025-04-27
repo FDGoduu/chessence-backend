@@ -19,9 +19,9 @@ const allowedOrigins = [
 const corsOptionsDelegate = function (req, callback) {
   let corsOptions;
   if (allowedOrigins.indexOf(req.header('Origin')) !== -1) {
-    corsOptions = { origin: true, credentials: true }; // pozwól
+    corsOptions = { origin: true, credentials: true };
   } else {
-    corsOptions = { origin: false }; // blokuj
+    corsOptions = { origin: false };
   }
   callback(null, corsOptions);
 };
@@ -31,10 +31,15 @@ app.options('*', cors(corsOptionsDelegate));
 
 app.use(express.json());
 
-// --- Teraz socket.io ---
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true,
     allowedHeaders: ["Content-Type"]
