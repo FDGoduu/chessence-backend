@@ -250,6 +250,38 @@ let players = {};
 
 io.on("connection", (socket) => {
   
+  // 🔥 Utworzenie pokoju i wysłanie zaproszenia do znajomego
+socket.on('createGameInvite', ({ fromNick, toFriendId }) => {
+  const roomCode = generateRoomCode();
+  rooms[roomCode] = [socket.id];
+  socket.join(roomCode);
+  console.log(`🆕 Pokój ${roomCode} utworzony dla zaproszenia znajomego`);
+
+  // Znajdź socket ID znajomego
+  const targetSocketId = Object.entries(players).find(([_, data]) => data.id === toFriendId)?.[0];
+  if (targetSocketId) {
+    io.to(targetSocketId).emit('incomingGameInvite', { fromNick, roomCode });
+  }
+});
+
+// 🔥 Odbiór akceptacji zaproszenia
+socket.on('acceptGameInvite', ({ roomCode, nickname }) => {
+  const room = rooms[roomCode];
+  if (!room || room.length >= 2) {
+    socket.emit("roomError", { message: "Pokój pełny lub nie istnieje" });
+    return;
+  }
+  room.push(socket.id);
+  socket.join(roomCode);
+
+  io.to(roomCode).emit("startGame", {
+    colorMap: assignColors(room),
+  });
+
+  console.log(`✅ Gracz ${nickname} zaakceptował zaproszenie i dołączył do pokoju ${roomCode}`);
+});
+
+  
  socket.on('sendFriendRequest', async ({ from, to }) => {
   try {
     const senderUser = await usersCollection.findOne({ nick: from });
