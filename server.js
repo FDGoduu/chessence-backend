@@ -115,6 +115,7 @@ app.post('/api/users/save', async (req, res) => {
 
 app.post('/api/profile/save', async (req, res) => {
   const { nick, ui } = req.body;
+  console.log("➡️ Otrzymano prośbę o profil:", nick); // <-- dodaj to
   if (!nick || !ui) return res.status(400).send('Missing nick or UI data');
 
   await usersCollection.updateOne(
