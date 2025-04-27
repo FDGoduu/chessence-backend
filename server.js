@@ -24,18 +24,6 @@ const io = new Server(server, {
   }
 });
 
-app.get('/api/test/users', async (req, res) => {
-  try {
-    const users = await usersCollection.find({}).toArray();
-    console.log("📋 Aktualna lista userów na serwerze:", users);
-    res.json(users);
-  } catch (error) {
-    console.error("❌ Błąd pobierania userów:", error);
-    res.status(500).send("Internal server error");
-  }
-});
-
-
 // --- MongoDB Client setup ---
 const client = new MongoClient(process.env.MONGO_URI);
 let usersCollection;
@@ -141,7 +129,7 @@ app.get('/api/profile/:nick', async (req, res) => {
 
   if (!nick) return res.status(400).send('Missing nick');
 
-  const user = await usersCollection.findOne({ nick });
+  const user = await usersCollection.findOne({ nick: { $eq: nick } });
 
   if (!user) {
     console.log(`🚫 Nie znaleziono użytkownika "${nick}"`);
