@@ -153,20 +153,23 @@ app.post('/api/friends/request', async (req, res) => {
   const { sender, receiver } = req.body;
   if (!sender || !receiver) return res.status(400).send('Missing sender or receiver');
 
+  const senderUser = await usersCollection.findOne({ nick: sender });
   const receiverUser = await usersCollection.findOne({ nick: receiver });
-  if (!receiverUser) return res.status(404).send('Receiver not found');
 
-  if (receiverUser.pendingFriends?.includes(sender)) {
+  if (!receiverUser || !senderUser) return res.status(404).send('Sender or Receiver not found');
+
+  // 🔥 Sprawdź, czy zaproszenie już istnieje (w obie strony)
+  if (receiverUser.pendingFriends?.includes(sender) || senderUser.pendingInvites?.includes(receiver)) {
     return res.status(400).send('Invitation already sent');
   }
 
-  // 🔵 Dodaj sendera do pendingFriends receivera
+  // 🔵 Dodaj sendera do pendingFriends odbiorcy
   await usersCollection.updateOne(
     { nick: receiver },
     { $addToSet: { pendingFriends: sender } }
   );
 
-  // 🟡 Dodaj receivera do pendingInvites sendera
+  // 🟡 Dodaj receivera do pendingInvites nadawcy
   await usersCollection.updateOne(
     { nick: sender },
     { $addToSet: { pendingInvites: receiver } }
