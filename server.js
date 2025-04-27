@@ -156,14 +156,23 @@ app.post('/api/friends/request', async (req, res) => {
   const receiverUser = await usersCollection.findOne({ nick: receiver });
   if (!receiverUser) return res.status(404).send('Receiver not found');
 
+  // Sprawdź, czy już jest oczekujące zaproszenie
   if (receiverUser.pendingFriends?.includes(sender)) {
     return res.status(400).send('Invitation already sent');
   }
 
+  // 🔵 Dodaj sendera do pendingFriends receivera
   await usersCollection.updateOne(
     { nick: receiver },
-    { $push: { pendingFriends: sender } }
+    { $addToSet: { pendingFriends: sender } }
   );
+
+  // 🟡 Dodaj receivera do pendingInvites sendera
+  await usersCollection.updateOne(
+    { nick: sender },
+    { $addToSet: { pendingInvites: receiver } }
+  );
+
   res.sendStatus(200);
 });
 
