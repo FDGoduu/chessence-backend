@@ -29,8 +29,9 @@ const io = new Server(server, {
       "http://127.0.0.1:8080",
       "https://chessence-frontend.onrender.com"
     ],
-    methods: ["GET", "POST"],
-    credentials: true
+    allowedHeaders: ["Content-Type"],
+    credentials: true,
+    methods: ["GET", "POST"]
   }
 });
 
