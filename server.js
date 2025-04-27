@@ -387,7 +387,7 @@ socket.on('friendListUpdated', ({ friend }) => {
 socket.on("joinRoom", ({ roomCode, nickname }) => {
   const room = rooms[roomCode];
   if (!room || room.length >= 2) {
-    socket.emit("roomError", { message: "Pokój pełny lub nie istnieje");
+    socket.emit("roomError", { message: "Pokój pełny lub nie istnieje" });
     return;
   }
   room.push(socket.id);
