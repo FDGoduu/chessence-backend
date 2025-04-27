@@ -113,6 +113,18 @@ app.post('/api/users/save', async (req, res) => {
   res.sendStatus(200);
 });
 
+app.post('/api/profile/save', async (req, res) => {
+  const { nick, ui } = req.body;
+  if (!nick || !ui) return res.status(400).send('Missing nick or UI data');
+
+  await usersCollection.updateOne(
+    { nick },
+    { $set: { ui } }
+  );
+
+  res.sendStatus(200);
+});
+
 app.get('/api/profile/:nick', async (req, res) => {
   const nick = req.params.nick;
   if (!nick) return res.status(400).send('Missing nick');
@@ -155,7 +167,6 @@ app.post('/api/friends/request', async (req, res) => {
   res.sendStatus(200);
 });
 
-// --- API akceptacji zaproszenia ---
 app.post('/api/friends/accept', async (req, res) => {
   const { sender, receiver } = req.body;
   if (!sender || !receiver) return res.status(400).send('Missing sender or receiver');
@@ -171,6 +182,7 @@ app.post('/api/friends/accept', async (req, res) => {
   await usersCollection.updateOne(
     { nick: sender },
     { 
+      $pull: { pendingInvites: receiver },
       $addToSet: { friends: receiver }
     }
   );
