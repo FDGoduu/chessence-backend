@@ -1,14 +1,27 @@
 // --- Podstawowe wymagane moduły ---
 const express = require("express");
 const http = require("http");
-const { Server } = require("socket.io");
 const { MongoClient, ObjectId } = require("mongodb");
 const cors = require("cors");
+const { Server } = require("socket.io");
 require("dotenv").config(); // aby odczytać MONGO_URI z .env
 
 const app = express();
 const server = http.createServer(app);
 
+// --- CORS musi być ustawiony przed socket.io i resztą ---
+app.use(cors({
+  origin: [
+    "https://fdgoduu.github.io",
+    "http://127.0.0.1:8080",
+    "https://chessence-frontend.onrender.com"
+  ],
+  credentials: true
+}));
+
+app.use(express.json());
+
+// --- Teraz dopiero socket.io ---
 const io = new Server(server, {
   cors: {
     origin: [
@@ -20,16 +33,6 @@ const io = new Server(server, {
     credentials: true
   }
 });
-
-app.use(cors({
-  origin: [
-    "https://fdgoduu.github.io",
-    "http://127.0.0.1:8080",
-    "https://chessence-frontend.onrender.com"
-  ],
-  credentials: true
-}));
-app.use(express.json());
 
 // --- MongoDB Client setup ---
 const client = new MongoClient(process.env.MONGO_URI);
