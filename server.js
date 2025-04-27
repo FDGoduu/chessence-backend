@@ -249,6 +249,43 @@ const rooms = {};
 let players = {};
 
 io.on("connection", (socket) => {
+  
+  socket.on('sendFriendRequest', async ({ from, to }) => {
+  try {
+    const senderUser = await usersCollection.findOne({ nick: from });
+    const receiverUser = await usersCollection.findOne({ nick: to });
+
+    if (!senderUser || !receiverUser) {
+      console.error('Sender or Receiver not found!');
+      return;
+    }
+
+    if (receiverUser.pendingFriends?.includes(from) || senderUser.pendingInvites?.includes(to)) {
+      console.log('Invitation already sent.');
+      return;
+    }
+
+    await usersCollection.updateOne(
+      { nick: to },
+      { $addToSet: { pendingFriends: from } }
+    );
+
+    await usersCollection.updateOne(
+      { nick: from },
+      { $addToSet: { pendingInvites: to } }
+    );
+
+    console.log(`📨 Zaproszenie socket: ${from} -> ${to}`);
+
+    const receiverSocketId = Object.entries(players).find(([_, data]) => data.nick === to)?.[0];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('refreshFriends');
+    }
+  } catch (error) {
+    console.error('❌ Błąd przy socketowym wysyłaniu zaproszenia:', error);
+  }
+});
+
   socket.on('registerPlayer', ({ nick, id }) => {
     console.log(`🔵 Zarejestrowano gracza: ${nick} (socket.id = ${socket.id})`);
     players[socket.id] = { nick, id };
