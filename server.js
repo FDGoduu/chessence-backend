@@ -19,6 +19,16 @@ app.use(cors({
   credentials: true
 }));
 
+// Obsługa preflight OPTIONS dla wszystkich endpointów
+app.options('*', cors({
+  origin: [
+    "https://fdgoduu.github.io",
+    "http://127.0.0.1:8080",
+    "https://chessence-frontend.onrender.com"
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // --- Teraz dopiero socket.io ---
