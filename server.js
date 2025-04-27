@@ -93,14 +93,23 @@ app.get('/api/users', async (req, res) => {
 });
 
 // --- API zapisu profilu użytkownika ---
-app.post('/api/profile/save', async (req, res) => {
-  const { nick, data } = req.body;
-  if (!nick || !data) return res.status(400).send('Missing nick or data');
+// Alias /api/users/save -> działa jak /api/profile/save
+app.post('/api/users/save', async (req, res) => {
+  const { users } = req.body;
+  if (!users) return res.status(400).send('Missing users data');
 
-  await usersCollection.updateOne(
-    { nick },
-    { $set: { ...data } }
-  );
+  const operations = Object.entries(users).map(([nick, userData]) => ({
+    updateOne: {
+      filter: { nick },
+      update: { $set: userData },
+      upsert: true
+    }
+  }));
+
+  if (operations.length > 0) {
+    await usersCollection.bulkWrite(operations);
+  }
+
   res.sendStatus(200);
 });
 
