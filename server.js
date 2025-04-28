@@ -474,9 +474,24 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
     console.log(`🚪 Gracz opuścił pokój ${roomCode}`);
   }
 });
-  const versionInterval = setInterval(() => {
-    socket.emit('serverVersionUpdate', { version: serverVersion });
-  }, 10000);
+  
+socket.on('serverVersionUpdate', (data) => {
+  const currentVersion = "0.6.0"; // 🔥 podaj tutaj aktualną wersję klienta (frontend)
+  const serverVersion = data.version;
+
+  const seenVersion = localStorage.getItem("seenUpdateVersion");
+
+  if (serverVersion !== currentVersion && seenVersion !== serverVersion) {
+    showPopupAdvanced({
+      message: "🚀 Nowa wersja Chessence! Odśwież stronę, aby wczytać aktualizację.",
+      confirm: false,
+      onConfirm: () => {
+        localStorage.setItem("seenUpdateVersion", serverVersion);
+      }
+    });
+  }
+});
+
 
   socket.on('disconnect', () => {
     console.log("Użytkownik rozłączony:", socket.id);
