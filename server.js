@@ -142,10 +142,10 @@ app.get('/api/profile/:nick', async (req, res) => {
 // --- API usuwania konta ---
 app.post('/api/users/delete', async (req, res) => {
   const { nick, password } = req.body;
-  if (!nick || !password) return res.status(400).send('Missing nick or password');
+  if (!nick || !password) return res.status(400).send('Brak nicku albo hasła');
 
   const user = await usersCollection.findOne({ nick });
-  if (!user || user.password !== password) return res.status(401).send('Invalid credentials');
+  if (!user || user.password !== password) return res.status(401).send('Niepoprawne dane');
 
   await usersCollection.deleteOne({ nick });
   res.sendStatus(200);
