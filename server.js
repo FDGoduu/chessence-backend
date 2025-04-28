@@ -4,7 +4,7 @@ const { MongoClient, ObjectId } = require("mongodb");
 const cors = require("cors");
 const { Server } = require("socket.io");
 require("dotenv").config();
-
+const io = require("socke
 const app = express();
 const server = http.createServer(app);
 
@@ -474,6 +474,14 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
     console.log(`🚪 Gracz opuścił pokój ${roomCode}`);
   }
 });
+  const versionInterval = setInterval(() => {
+    socket.emit('serverVersionUpdate', { version: serverVersion });
+  }, 10000);
+
+  socket.on('disconnect', () => {
+    console.log("Użytkownik rozłączony:", socket.id);
+    clearInterval(versionInterval); // 🔥 Zatrzymujemy licznik po rozłączeniu!
+  });
 });
 
 function generateRoomCode() {
