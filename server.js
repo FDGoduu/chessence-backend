@@ -4,7 +4,7 @@ const { MongoClient, ObjectId } = require("mongodb");
 const cors = require("cors");
 const { Server } = require("socket.io");
 require("dotenv").config();
-const serverVersion = "0.6.0";
+const serverVersion = "0.6.5";
 const app = express();
 const server = http.createServer(app);
 
