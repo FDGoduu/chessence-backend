@@ -69,10 +69,10 @@ app.post('/api/register', async (req, res) => {
 // --- API Logowanie użytkownika ---
 app.post('/api/login', async (req, res) => {
   const { nick, password } = req.body;
-  if (!nick || !password) return res.status(400).send('Missing nick or password');
+  if (!nick || !password) return res.status(400).send('Brak nicku lub hasła');
 
   const user = await usersCollection.findOne({ nick });
-  if (!user || user.password !== password) return res.status(401).send('Invalid credentials');
+  if (!user || user.password !== password) return res.status(401).send('Niepoprawne hasło');
 
   const { password: _, ...safeUser } = user; // usuń hasło z odpowiedzi
   res.json({ user: safeUser });
