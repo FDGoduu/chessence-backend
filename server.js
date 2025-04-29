@@ -10,7 +10,8 @@ const server = http.createServer(app);
 
 // --- Ustawienie CORS NA SZTYWNO ---
 app.use(cors({
-  origin: "https://chessence-frontend.onrender.com",
+  origin: 'https://chessence-frontend.onrender.com',
+  methods: ["GET", "POST"],
   credentials: true
 }));
 
