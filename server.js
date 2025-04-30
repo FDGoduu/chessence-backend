@@ -475,11 +475,6 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
     console.log(`🚪 Gracz opuścił pokój ${roomCode}`);
   }
 });
-
-  socket.on('disconnect', () => {
-    console.log("Użytkownik rozłączony:", socket.id);
-    clearInterval(versionInterval); // 🔥 Zatrzymujemy licznik po rozłączeniu!
-  });
 });
 
 function generateRoomCode() {
