@@ -408,10 +408,17 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
       if (sockets.length === 1) {
         sockets.push(socket.id);
         socket.join(code);
+        const colorMap = assignColors(sockets);
+        const playerData = sockets.map(id => players[id] || { nickname: "Nieznany", avatar: "avatar1.png", frame: "default_frame", level: 1 });
+        
         io.to(code).emit("startGame", {
-        colorMap: assignColors(sockets),
-        roomCode: code, // 🆕 Dodane!
-      });
+          colorMap,
+          roomCode: code,
+          players: sockets.map((id, i) => ({
+            id,
+            ...playerData[i]
+          }))
+        });
         console.log(`🤝 Automatyczne parowanie: ${sockets[0]} vs ${sockets[1]}`);
         found = true;
         break;
