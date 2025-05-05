@@ -16,6 +16,12 @@ app.use(cors({
   credentials: true
 }));
 
+app.options("*", cors({
+  origin: "https://chessence-frontend.onrender.com",
+  methods: ["GET", "POST"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 const io = new Server(server, {
