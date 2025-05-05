@@ -67,16 +67,22 @@ app.post('/api/register', async (req, res) => {
   res.sendStatus(200);
 });
 
-// --- API Logowanie użytkownika ---
-app.post('/api/login', async (req, res) => {
+// --- API login z blokadą ponownego logowania ---
+const loggedUsers = new Map(); // nick → socketId (lub true)
+
+app.post("/api/login", async (req, res) => {
   const { nick, password } = req.body;
-  if (!nick || !password) return res.status(400).send('Brak nicku lub hasła');
+  if (!nick || !password) return res.status(400).send("Brak nicku lub hasła");
 
   const user = await usersCollection.findOne({ nick });
-  if (!user || user.password !== password) return res.status(401).send('Niepoprawne hasło');
+  if (!user || user.password !== password) return res.status(401).send("Niepoprawne hasło");
 
-  const { password: _, ...safeUser } = user; // usuń hasło z odpowiedzi
-  res.json({ user: safeUser });
+  if (loggedUsers.has(nick)) {
+    return res.status(409).json({ error: "alreadyLoggedIn" }); // 🔥 Blokada
+  }
+
+  const { password: _, ...safeUser } = user;
+  return res.status(200).json({ user: safeUser });
 });
 
 // --- API pobrania użytkowników (bez haseł) ---
@@ -471,6 +477,21 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
       }
     }
   });
+
+  // --- Rejestracja aktywnego użytkownika ---
+socket.on("registerSession", (nick) => {
+  loggedUsers.set(nick, socket.id);
+  console.log(`✅ Zarejestrowano sesję gracza ${nick} (${socket.id})`);
+});
+
+// --- Jawne wylogowanie przez klienta ---
+socket.on("logoutSession", (nick) => {
+  if (loggedUsers.get(nick) === socket.id) {
+    loggedUsers.delete(nick);
+    console.log(`🚪 Gracz ${nick} wylogował się ręcznie`);
+  }
+});
+
   socket.on("leaveRoom", ({ roomCode }) => {
   const room = rooms[roomCode];
   if (room) {
