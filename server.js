@@ -105,11 +105,15 @@ app.get('/api/users', async (req, res) => {
   const users = await usersCollection.find({}).toArray();
   const safeUsers = {};
   for (const user of users) {
-    const { password, _id, ...safeData } = user;
-    safeUsers[user.nick] = safeData;
+    const { password, _id, isLoggedIn = false, ...safeData } = user;
+    safeUsers[user.nick] = {
+      ...safeData,
+      isLoggedIn: isLoggedIn
+    };
   }
   res.json({ users: safeUsers });
 });
+
 
 // --- API zapisu profilu użytkownika ---
 // Alias /api/users/save -> działa jak /api/profile/save
