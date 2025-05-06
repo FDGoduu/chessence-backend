@@ -7,18 +7,10 @@ require("dotenv").config();
 const serverVersion = "0.6.0";
 const app = express();
 const server = http.createServer(app);
-const onlineUsers = new Set(); // globalnie, najlepiej na samej górze
-const socketToNick = {};
 
 // --- Ustawienie CORS NA SZTYWNO ---
 app.use(cors({
   origin: 'https://chessence-frontend.onrender.com',
-  methods: ["GET", "POST"],
-  credentials: true
-}));
-
-app.options("*", cors({
-  origin: "https://chessence-frontend.onrender.com",
   methods: ["GET", "POST"],
   credentials: true
 }));
@@ -138,7 +130,7 @@ app.post('/api/profile/save', async (req, res) => {
   res.sendStatus(200);
 });
 
-app.get('/api/profile/nick', async (req, res) => {
+app.get('/api/profile/:nick', async (req, res) => {
   const nick = req.params.nick;
   console.log(`➡️ Żądanie profilu dla nicka: "${nick}" (długość: ${nick.length})`);
 
@@ -473,66 +465,30 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
     socket.to(roomCode).emit("gameOver", { reason: "timeout" });
   });
 
-socket.on("disconnect", async () => {
-  console.log(`🔴 Rozłączono socket: ${socket.id}`);
-
-  const nick = socketToNick[socket.id];
-  if (nick) {
-    const users = await loadUsers();
-    if (users[nick]) {
-      users[nick].isLoggedIn = false;
-      users[nick].lastSocketId = null;
-      await saveUsers(users);
+  socket.on("disconnect", () => {
+    console.log(`🔴 Rozłączono socket: ${socket.id}`);
+    delete players[socket.id];
+    for (const [roomCode, sockets] of Object.entries(rooms)) {
+      if (sockets.includes(socket.id)) {
+        const other = sockets.find((id) => id !== socket.id);
+        if (other) io.to(other).emit("opponentLeft");
+        delete rooms[roomCode];
+        break;
+      }
     }
-    delete activeSessions[nick];
-    delete socketToNick[socket.id];
-    loggedUsers.delete(nick);
-    console.log(`🚪 Gracz ${nick} rozłączony – status zresetowany`);
-  }
-
-  delete players[socket.id];
-  for (const [roomCode, sockets] of Object.entries(rooms)) {
-    if (sockets.includes(socket.id)) {
-      const other = sockets.find(id => id !== socket.id);
-      if (other) io.to(other).emit("opponentLeft");
-      delete rooms[roomCode];
-      break;
-    }
-  }
-});
+  });
 
   // --- Rejestracja aktywnego użytkownika ---
-socket.on("registerSession", async (nick) => {
-  const users = await loadUsers();
-  if (!users[nick]) return;
-
-  if (users[nick].isLoggedIn) {
-    socket.emit("sessionConflict");
-    return;
-  }
-
-  users[nick].isLoggedIn = true;
-  users[nick].lastSocketId = socket.id;
-
-  await saveUsers(users);
-  activeSessions[nick] = socket.id;
-  socketToNick[socket.id] = nick;
-
-  console.log(`✅ Zarejestrowano sesję: ${nick} (${socket.id})`);
+socket.on("registerSession", (nick) => {
+  loggedUsers.set(nick, socket.id);
+  console.log(`✅ Zarejestrowano sesję gracza ${nick} (${socket.id})`);
 });
 
 // --- Jawne wylogowanie przez klienta ---
-socket.on("logoutSession", async (nick) => {
-  const users = await loadUsers();
-  if (!users[nick]) return;
-
+socket.on("logoutSession", (nick) => {
   if (loggedUsers.get(nick) === socket.id) {
     loggedUsers.delete(nick);
     console.log(`🚪 Gracz ${nick} wylogował się ręcznie`);
-
-    users[nick].isLoggedIn = false;
-    users[nick].lastSocketId = null;
-    await saveUsers(users);
   }
 });
 
