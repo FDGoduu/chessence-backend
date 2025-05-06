@@ -137,19 +137,24 @@ app.post('/api/users/save', async (req, res) => {
 });
 
 app.post('/api/profile/save', async (req, res) => {
-  const { nick, avatar, frame, background, title } = req.body;
-  if (!nick) return res.status(400).send("Brakuje nicku");
+  const { nick, ui } = req.body;
+  if (!nick || !ui) return res.status(400).send("Brakuje nicku lub danych UI");
+
+  const avatar = ui.avatar || "avatar1.png";
+  const frame = ui.frame || "default_frame";
+  const background = ui.background || "bg0.png";
+  const title = ui.title || "";
 
   await usersCollection.updateOne({ nick }, {
     $set: {
-      "ui.avatar": avatar || "avatar1.png",
-      "ui.frame": frame || "default_frame",
-      "ui.background": background || "bg0.png",
-      "ui.title": title || "Brak"
+      "ui.avatar": avatar,
+      "ui.frame": frame,
+      "ui.background": background,
+      "ui.title": title
     }
   });
 
-  console.log(`💾 Zapisano profil gracza ${nick} (avatar, frame, background, title)`);
+  console.log(`💾 Zapisano profil gracza ${nick} (wszystkie ustawienia UI)`);
   res.sendStatus(200);
 });
 
