@@ -7,6 +7,7 @@ require("dotenv").config();
 const serverVersion = "0.6.0";
 const app = express();
 const server = http.createServer(app);
+const socketToNick = {};
 
 // --- Ustawienie CORS NA SZTYWNO ---
 app.use(cors({
