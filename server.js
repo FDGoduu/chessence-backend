@@ -505,30 +505,29 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
     socket.to(roomCode).emit("gameOver", { reason: "timeout" });
   });
 
-  socket.on("disconnect", async () => {
-    console.log(`🔴 Rozłączono socket: ${socket.id}`);
-    delete players[socket.id];
-    const nick = Object.entries(players).find(([id, data]) => id === socket.id)?.[1]?.nick;
-    if (nick) {
-      const user = await usersCollection.findOne({ nick });
-      if (user?.friends?.length > 0) {
-        for (const friendNick of user.friends) {
-          const targetSocketId = Object.entries(players).find(([_, data]) => data.nick === friendNick)?.[0];
-          if (targetSocketId) {
-            io.to(targetSocketId).emit("refreshFriends");
-          }
-        }
-      }
-    }
-    for (const [roomCode, sockets] of Object.entries(rooms)) {
-      if (sockets.includes(socket.id)) {
-        const other = sockets.find((id) => id !== socket.id);
-        if (other) io.to(other).emit("opponentLeft");
-        delete rooms[roomCode];
-        break;
-      }
-    }
+socket.on("disconnect", async () => {
+  const player = players[socket.id];
+  const nick = player?.nick;
+
+  console.log(`🔴 Rozłączono socket: ${socket.id} (${nick || "?"})`);
+  delete players[socket.id];
+  if (nick) loggedUsers.delete(nick);
+
+  await usersCollection.updateOne({ nick }, {
+    $set: { isLoggedIn: false, lastSocketId: null }
   });
+
+  // 🔥 Odśwież znajomym
+  const user = await usersCollection.findOne({ nick });
+  if (user?.friends?.length > 0) {
+    for (const friendNick of user.friends) {
+      const targetSocketId = Object.entries(players).find(([_, data]) => data.nick === friendNick)?.[0];
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("refreshFriends");
+      }
+    }
+  }
+});
 
   // --- Rejestracja aktywnego użytkownika ---
 socket.on("registerSession", async (nick) => {
@@ -564,19 +563,20 @@ socket.on("registerSession", async (nick) => {
 
 // --- Jawne wylogowanie przez klienta ---
 socket.on("logoutSession", async (nick) => {
-  if (loggedUsers.get(nick) === socket.id) {
-    loggedUsers.delete(nick);
-    console.log(`🚪 Gracz ${nick} wylogował się ręcznie`);
+  console.log(`👋 Wylogowanie sesji gracza ${nick}`);
+  loggedUsers.delete(nick);
+  await usersCollection.updateOne({ nick }, {
+    $set: { isLoggedIn: false, lastSocketId: null }
+  });
 
-    try {
-      await usersCollection.updateOne({ nick }, {
-        $set: {
-          isLoggedIn: false,
-          lastSocketId: null
-        }
-      });
-    } catch (err) {
-      console.error(`❌ Błąd przy wylogowaniu z Mongo dla ${nick}:`, err.message);
+  // 🔥 Odśwież znajomym
+  const user = await usersCollection.findOne({ nick });
+  if (user?.friends?.length > 0) {
+    for (const friendNick of user.friends) {
+      const targetSocketId = Object.entries(players).find(([_, data]) => data.nick === friendNick)?.[0];
+      if (targetSocketId) {
+        io.to(targetSocketId).emit("refreshFriends");
+      }
     }
   }
 });
