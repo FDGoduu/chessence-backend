@@ -525,6 +525,16 @@ socket.on("registerSession", async (nick) => {
 
   try {
     await usersCollection.updateOne({ nick }, {
+      // 🔥 Emituj refreshFriends do wszystkich znajomych
+    const user = await usersCollection.findOne({ nick });
+    if (user?.friends?.length > 0) {
+      for (const friendNick of user.friends) {
+        const targetSocketId = Object.entries(players).find(([_, data]) => data.nick === friendNick)?.[0];
+        if (targetSocketId) {
+          io.to(targetSocketId).emit("refreshFriends");
+        }
+      }
+    }
       $set: {
         isLoggedIn: true,
         lastSocketId: socket.id
