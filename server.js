@@ -560,11 +560,13 @@ function assignColors(players) {
     [shuffled[1]]: "b",
   };
 }
-const routes = app._router.stack
+app._router.stack
   .filter(r => r.route)
-  .map(r => r.route.path);
+  .forEach(r => {
+    const methods = Object.keys(r.route.methods).join(', ').toUpperCase();
+    console.log(`[ROUTE] ${methods} ${r.route.path}`);
+  });
 
-console.log("🛣️ Zarejestrowane ścieżki:", routes);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
