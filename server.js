@@ -508,6 +508,18 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
   socket.on("disconnect", () => {
     console.log(`🔴 Rozłączono socket: ${socket.id}`);
     delete players[socket.id];
+    const nick = Object.entries(players).find(([id, data]) => id === socket.id)?.[1]?.nick;
+    if (nick) {
+      const user = await usersCollection.findOne({ nick });
+      if (user?.friends?.length > 0) {
+        for (const friendNick of user.friends) {
+          const targetSocketId = Object.entries(players).find(([_, data]) => data.nick === friendNick)?.[0];
+          if (targetSocketId) {
+            io.to(targetSocketId).emit("refreshFriends");
+          }
+        }
+      }
+    }
     for (const [roomCode, sockets] of Object.entries(rooms)) {
       if (sockets.includes(socket.id)) {
         const other = sockets.find((id) => id !== socket.id);
