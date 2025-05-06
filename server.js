@@ -505,7 +505,7 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
     socket.to(roomCode).emit("gameOver", { reason: "timeout" });
   });
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     console.log(`🔴 Rozłączono socket: ${socket.id}`);
     delete players[socket.id];
     const nick = Object.entries(players).find(([id, data]) => id === socket.id)?.[1]?.nick;
