@@ -47,22 +47,26 @@ app.post('/api/register', async (req, res) => {
   const existingUser = await usersCollection.findOne({ nick });
   if (existingUser) return res.status(409).send('User already exists');
 
-  const newUser = {
-    nick,
-    password,
-    id: "u_" + Math.random().toString(36).substring(2, 10),
-    xp: 0,
-    level: 0,
-    achievements: {},
-    ui: {
-      avatar: "avatar1.png",
-      background: "bg0.png",
-      frame: "default_frame"
-    },
-    friends: [],
-    pendingFriends: [],
-    pendingInvites: []
-  };
+const newUser = {
+  nick,
+  password,
+  id: "u_" + Math.random().toString(36).substring(2, 10),
+  xp: 0,
+  level: 0,
+  prestige: 0, // 🆕 Dodane
+  achievements: {},
+  ui: {
+    avatar: "avatar1.png",
+    background: "bg0.png",
+    frame: "default_frame",
+    title: ""
+  },
+  friends: [],
+  pendingFriends: [],
+  pendingInvites: [],
+  isLoggedIn: false,
+  lastSocketId: null
+};
 
   await usersCollection.insertOne(newUser);
   res.sendStatus(200);
@@ -137,7 +141,7 @@ app.post('/api/users/save', async (req, res) => {
 });
 
 app.post('/api/profile/save', async (req, res) => {
-  const { nick, ui } = req.body;
+  const { nick, ui, prestige } = req.body;
   if (!nick || !ui) return res.status(400).send("Brakuje nicku lub danych UI");
 
   const avatar = ui.avatar || "avatar1.png";
@@ -145,14 +149,15 @@ app.post('/api/profile/save', async (req, res) => {
   const background = ui.background || "bg0.png";
   const title = ui.title || "";
 
-  await usersCollection.updateOne({ nick }, {
-    $set: {
-      "ui.avatar": avatar,
-      "ui.frame": frame,
-      "ui.background": background,
-      "ui.title": title
-    }
-  });
+await usersCollection.updateOne({ nick }, {
+  $set: {
+    "ui.avatar": avatar,
+    "ui.frame": frame,
+    "ui.background": background,
+    "ui.title": title,
+    prestige: typeof prestige === "number" ? prestige : 0 // 🆕
+  }
+});
 
   console.log(`💾 Zapisano profil gracza ${nick} (wszystkie ustawienia UI)`);
   res.sendStatus(200);
