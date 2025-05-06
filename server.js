@@ -8,6 +8,7 @@ const serverVersion = "0.6.0";
 const app = express();
 const server = http.createServer(app);
 const onlineUsers = new Set(); // globalnie, najlepiej na samej górze
+const socketToNick = {};
 
 // --- Ustawienie CORS NA SZTYWNO ---
 app.use(cors({
