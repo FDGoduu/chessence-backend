@@ -160,6 +160,27 @@ app.get('/api/profile/:nick', async (req, res) => {
 
   res.json({ user });
 });
+app.get("/api/friends/:nick", async (req, res) => {
+  const user = await usersCollection.findOne({ nick: req.params.nick });
+
+  if (!user || !user.friends) return res.json([]);
+
+  const friendsWithStatus = await Promise.all(
+    user.friends.map(async (friendNick) => {
+      const friend = await usersCollection.findOne({ nick: friendNick });
+      return {
+        nick: friendNick,
+        id: friend?.id || "brak",
+        avatar: friend?.ui?.avatar || "avatar1.png",
+        frame: friend?.ui?.frame || "default.png",
+        level: friend?.level || 1,
+        online: !!friend?.isLoggedIn, // 💡 To jest kluczowe!
+      };
+    })
+  );
+
+  res.json(friendsWithStatus);
+});
 
 // --- API usuwania konta ---
 app.post('/api/users/delete', async (req, res) => {
