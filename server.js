@@ -78,9 +78,22 @@ app.post("/api/login", async (req, res) => {
   const user = await usersCollection.findOne({ nick });
   if (!user || user.password !== password) return res.status(401).send("Niepoprawne hasło");
 
-  if (loggedUsers.has(nick)) {
-    return res.status(409).json({ error: "alreadyLoggedIn" }); // 🔥 Blokada
+ if (user.isLoggedIn) {
+  const stillConnected = [...io.sockets.sockets.keys()].includes(user.lastSocketId);
+  if (stillConnected) {
+    return res.status(409).json({ error: "alreadyLoggedIn" });
+  } else {
+    // martwa sesja – wyczyść
+    await usersCollection.updateOne({ nick }, {
+      $set: {
+        isLoggedIn: false,
+        lastSocketId: null
+      }
+    });
+    console.log(`🧹 Wyczyściłem martwą sesję gracza ${nick}`);
   }
+}
+
 
   const { password: _, ...safeUser } = user;
   return res.status(200).json({ user: safeUser });
@@ -481,18 +494,38 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
   });
 
   // --- Rejestracja aktywnego użytkownika ---
-socket.on("registerSession", (nick) => {
+socket.on("registerSession", async (nick) => {
   loggedUsers.set(nick, socket.id);
   console.log(`✅ Zarejestrowano sesję gracza ${nick} (${socket.id})`);
-  players[socket.id] = { nick };
-  await usersCollection.updateOne({ nick }, { $set: { isLoggedIn: true } });
+
+  try {
+    await usersCollection.updateOne({ nick }, {
+      $set: {
+        isLoggedIn: true,
+        lastSocketId: socket.id
+      }
+    });
+  } catch (err) {
+    console.error(`❌ Błąd przy zapisie sesji do Mongo dla ${nick}:`, err.message);
+  }
 });
 
 // --- Jawne wylogowanie przez klienta ---
-socket.on("logoutSession", (nick) => {
+socket.on("logoutSession", async (nick) => {
   if (loggedUsers.get(nick) === socket.id) {
     loggedUsers.delete(nick);
     console.log(`🚪 Gracz ${nick} wylogował się ręcznie`);
+
+    try {
+      await usersCollection.updateOne({ nick }, {
+        $set: {
+          isLoggedIn: false,
+          lastSocketId: null
+        }
+      });
+    } catch (err) {
+      console.error(`❌ Błąd przy wylogowaniu z Mongo dla ${nick}:`, err.message);
+    }
   }
 });
 
@@ -520,6 +553,22 @@ function assignColors(players) {
     [shuffled[1]]: "b",
   };
 }
+setInterval(async () => {
+  try {
+    const users = await usersCollection.find({ isLoggedIn: true }).toArray();
+    for (const user of users) {
+      const stillConnected = [...io.sockets.sockets.keys()].includes(user.lastSocketId);
+      if (!stillConnected) {
+        await usersCollection.updateOne({ nick: user.nick }, {
+          $set: { isLoggedIn: false, lastSocketId: null }
+        });
+        console.log(`🧹 Auto-wylogowano nieaktywnego gracza: ${user.nick}`);
+      }
+    }
+  } catch (err) {
+    console.error("❌ Błąd czyszczenia sesji:", err.message);
+  }
+}, 60000); // co minutę
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
