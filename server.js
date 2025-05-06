@@ -138,7 +138,7 @@ app.post('/api/profile/save', async (req, res) => {
   res.sendStatus(200);
 });
 
-app.get('/api/profile/:nick', async (req, res) => {
+app.get('/api/profile/nick', async (req, res) => {
   const nick = req.params.nick;
   console.log(`➡️ Żądanie profilu dla nicka: "${nick}" (długość: ${nick.length})`);
 
@@ -560,18 +560,6 @@ function assignColors(players) {
     [shuffled[1]]: "b",
   };
 }
-// 🛠️ Zamiast mapowania pathów:
-try {
-  const routes = app._router.stack
-    .filter(r => r.route && r.route.path)
-    .map(r => r.route.path);
-
-  console.log("🛣️ Zarejestrowane ścieżki:", routes);
-} catch (err) {
-  console.warn("⚠️ Nie udało się wypisać tras:", err.message);
-}
-
-
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
