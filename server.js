@@ -560,12 +560,17 @@ function assignColors(players) {
     [shuffled[1]]: "b",
   };
 }
-app._router.stack
-  .filter(r => r.route)
-  .forEach(r => {
-    const methods = Object.keys(r.route.methods).join(', ').toUpperCase();
-    console.log(`[ROUTE] ${methods} ${r.route.path}`);
-  });
+// 🛠️ Zamiast mapowania pathów:
+try {
+  const routes = app._router.stack
+    .filter(r => r.route && r.route.path)
+    .map(r => r.route.path);
+
+  console.log("🛣️ Zarejestrowane ścieżki:", routes);
+} catch (err) {
+  console.warn("⚠️ Nie udało się wypisać tras:", err.message);
+}
+
 
 
 const PORT = process.env.PORT || 3000;
