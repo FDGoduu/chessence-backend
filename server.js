@@ -84,6 +84,7 @@ app.post("/api/login", async (req, res) => {
 
   const { password: _, ...safeUser } = user;
   return res.status(200).json({ user: safeUser });
+  await usersCollection.updateOne({ nick }, { $set: { isLoggedIn: true } });
 });
 
 // --- API pobrania użytkowników (bez haseł) ---
@@ -483,6 +484,8 @@ socket.on("joinRoom", ({ roomCode, nickname }) => {
 socket.on("registerSession", (nick) => {
   loggedUsers.set(nick, socket.id);
   console.log(`✅ Zarejestrowano sesję gracza ${nick} (${socket.id})`);
+  players[socket.id] = { nick };
+  await usersCollection.updateOne({ nick }, { $set: { isLoggedIn: true } });
 });
 
 // --- Jawne wylogowanie przez klienta ---
