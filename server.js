@@ -536,9 +536,18 @@ socket.on("registerSession", async (nick) => {
   console.log(`✅ Zarejestrowano sesję gracza ${nick} (${socket.id})`);
 
   try {
+    // ✅ Zapisz status gracza
     await usersCollection.updateOne({ nick }, {
-      // 🔥 Emituj refreshFriends do wszystkich znajomych
+      $set: {
+        isLoggedIn: true,
+        lastSocketId: socket.id
+      }
+    });
+
+    // ✅ Pobierz użytkownika po zapisie
     const user = await usersCollection.findOne({ nick });
+
+    // ✅ Emituj refreshFriends do jego znajomych
     if (user?.friends?.length > 0) {
       for (const friendNick of user.friends) {
         const targetSocketId = Object.entries(players).find(([_, data]) => data.nick === friendNick)?.[0];
@@ -547,13 +556,9 @@ socket.on("registerSession", async (nick) => {
         }
       }
     }
-      $set: {
-        isLoggedIn: true,
-        lastSocketId: socket.id
-      }
-    });
+
   } catch (err) {
-    console.error(`❌ Błąd przy zapisie sesji do Mongo dla ${nick}:`, err.message);
+    console.error(`❌ Błąd przy rejestracji sesji dla ${nick}:`, err.message);
   }
 });
 
