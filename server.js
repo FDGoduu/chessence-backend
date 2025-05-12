@@ -100,8 +100,8 @@ app.post("/api/login", async (req, res) => {
 
 
   const { password: _, ...safeUser } = user;
-  return res.status(200).json({ user: safeUser });
   await usersCollection.updateOne({ nick }, { $set: { isLoggedIn: true } });
+  res.status(200).json({ user: safeUser });
 });
 
 // --- API pobrania użytkowników (bez haseł) ---
